@@ -17,7 +17,15 @@ import {
   loadTag, saveTag, recordPlayed, loadMute, saveMute, siteUrl, fmtDayShort, fmtInt,
 } from './ui/share';
 
-const today = dayKey();
+// dev-only: preview any day's layout with ?day=YYYY-MM-DD (stripped from production
+// builds by Vite's DEV flag; the server would reject submissions for a non-today day anyway)
+const devEnv = (import.meta as unknown as { env?: Record<string, unknown> }).env;
+const dayParam = new URLSearchParams(location.search).get('day');
+const today =
+  devEnv?.DEV && dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : dayKey();
+if (today !== dayKey()) {
+  console.warn(`[dev] previewing ${today} instead of ${dayKey()} — deaths/finishes won't persist`);
+}
 const { level } = generateDailyLevel(today);
 const game = new Game(level, dayMs());
 const input = new Input();
@@ -250,11 +258,11 @@ if (matchMedia('(pointer: coarse)').matches) {
   (document.getElementById('touch') as HTMLElement).style.display = 'block';
 }
 
-// countdown + midnight reset
+// countdown + midnight reset (disabled while previewing another day)
 setInterval(() => {
   const left = msUntilMidnightUtc();
   hud.setCountdown(left);
-  if (left < 1200) location.reload(); // the world ends
+  if (left < 1200 && today === dayKey()) location.reload(); // the world ends
 }, 1000);
 
 // corpse inspection: hover/tap shows tag + cause + time
