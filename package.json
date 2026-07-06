@@ -1,0 +1,30 @@
+{
+  "name": "deadline",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "check": "tsc --noEmit",
+    "verify:m1": "tsx scripts/verify-m1.ts",
+    "verify:m2": "tsx scripts/verify-m2.ts",
+    "verify:m3": "tsx scripts/verify-m3.ts",
+    "verify:m4": "tsx scripts/verify-m4.ts",
+    "verify:m5": "tsx scripts/verify-m5.ts",
+    "verify:m6": "tsx scripts/verify-m6.ts",
+    "verify:all": "tsx scripts/verify-m1.ts && tsx scripts/verify-m2.ts && tsx scripts/verify-m3.ts && tsx scripts/verify-m4.ts && tsx scripts/verify-m5.ts && tsx scripts/verify-m6.ts",
+    "seed": "tsx scripts/seed-day.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.0",
+    "@vercel/og": "^0.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}

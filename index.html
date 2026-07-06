@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0d12" />
+  <title>DEADLINE — one level, one day, everyone's corpses</title>
+  <meta name="description" content="One daily gauntlet, identical for everyone on Earth. Every death becomes a permanent corpse in the level — for all players. The world ends at midnight UTC." />
+  <meta property="og:title" content="DEADLINE" />
+  <meta property="og:description" content="One daily gauntlet. Every death becomes a corpse in the level, for everyone. The world ends at midnight UTC." />
+  <meta property="og:image" content="/api/og" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="/api/og" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230b0d12'/%3E%3Ctext x='8' y='12' font-size='11' text-anchor='middle'%3E%F0%9F%92%80%3C/text%3E%3C/svg%3E" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #0b0d12; color: #c8cede;
+      font-family: 'Courier New', ui-monospace, Menlo, Consolas, monospace;
+      -webkit-user-select: none; user-select: none;
+      touch-action: none; overscroll-behavior: none;
+    }
+    #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+    canvas#game { image-rendering: pixelated; image-rendering: crisp-edges; background: #0b0d12; }
+    #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+    #hud * { pointer-events: none; }
+    #hud button, #hud .clickable, #hud input { pointer-events: auto; }
+    .hud-corner { position: absolute; font-size: 12px; line-height: 1.5; text-shadow: 0 1px 2px #000; }
+    #counters { top: 8px; left: 10px; color: #7a8194; }
+    #counters b { color: #c8cede; font-weight: 700; }
+    #run-timer { top: 8px; right: 10px; font-size: 16px; color: #c8cede; text-align: right; }
+    #ticker { bottom: 8px; left: 10px; color: #666e82; font-size: 11px; max-width: 46vw; }
+    #ticker div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #ticker .fresh { color: #c93b4b; }
+    #countdown {
+      display: none; position: absolute; top: 34px; left: 50%; transform: translateX(-50%);
+      color: #c93b4b; font-size: 15px; font-weight: 700; letter-spacing: 1px;
+      text-shadow: 0 0 12px rgba(201,59,75,.6);
+    }
+    #corner-btns { bottom: 8px; right: 10px; display: flex; gap: 8px; }
+    #corner-btns button {
+      background: rgba(20,23,33,.85); color: #7a8194; border: 1px solid #2a2f40;
+      font-family: inherit; font-size: 11px; padding: 4px 8px; cursor: pointer;
+    }
+    #corner-btns button:hover { color: #c8cede; border-color: #4a5168; }
+    .overlay {
+      display: none; position: absolute; inset: 0; z-index: 20;
+      background: rgba(11,13,18,.82); backdrop-filter: blur(2px);
+      align-items: center; justify-content: center; text-align: center;
+    }
+    .overlay.open { display: flex; }
+    .overlay .panel { max-width: 520px; width: 92%; padding: 20px; }
+    .overlay h1 { font-size: 30px; letter-spacing: 4px; color: #e8ebf4; margin-bottom: 6px; }
+    .overlay h2 { font-size: 20px; color: #c93b4b; letter-spacing: 2px; margin-bottom: 8px; }
+    .overlay .sub { color: #7a8194; font-size: 13px; margin-bottom: 14px; line-height: 1.6; }
+    .overlay .big { font-size: 15px; color: #c8cede; margin-bottom: 12px; line-height: 1.7; }
+    .overlay button {
+      pointer-events: auto; background: #1a1e2b; color: #c8cede; border: 1px solid #3a4157;
+      font-family: inherit; font-size: 13px; padding: 8px 16px; margin: 4px; cursor: pointer;
+    }
+    .overlay button:hover { background: #232838; border-color: #5a637f; }
+    .overlay button.primary { background: #b8ff2e; color: #0b0d12; border-color: #b8ff2e; font-weight: 700; }
+    .overlay button.primary:hover { background: #cfff6b; }
+    #tag-input {
+      pointer-events: auto; background: #10131c; border: 1px solid #3a4157; color: #b8ff2e;
+      font-family: inherit; font-size: 28px; width: 110px; text-align: center; padding: 6px;
+      letter-spacing: 6px; text-transform: uppercase; outline: none;
+    }
+    #share-preview { max-width: 100%; border: 1px solid #2a2f40; margin: 10px 0; }
+    #lb { font-size: 12px; color: #7a8194; margin: 10px 0; text-align: left; max-height: 180px; overflow-y: auto; }
+    #lb .me { color: #b8ff2e; }
+    #lb div { display: flex; justify-content: space-between; gap: 12px; padding: 1px 0; }
+    #archive-list { text-align: left; max-height: 60vh; overflow-y: auto; pointer-events: auto; }
+    #archive-list .day { padding: 8px; border: 1px solid #2a2f40; margin-bottom: 8px; cursor: pointer; }
+    #archive-list .day:hover { border-color: #5a637f; }
+    #archive-list canvas { width: 100%; height: 48px; image-rendering: pixelated; display: block; margin-top: 6px; }
+    #touch { position: fixed; inset: 0; z-index: 5; display: none; }
+    #touch div { position: absolute; bottom: 0; height: 45%; opacity: .06; background: #fff; }
+    #touch .tl { left: 0; width: 22%; }
+    #touch .tr { left: 22%; width: 22%; }
+    #touch .tj { right: 0; width: 40%; }
+    .toast {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: #1a1e2b; border: 1px solid #3a4157; color: #c8cede; z-index: 50;
+      padding: 10px 18px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap"><canvas id="game"></canvas></div>
+  <div id="touch"><div class="tl"></div><div class="tr"></div><div class="tj"></div></div>
+  <div id="hud">
+    <div id="counters" class="hud-corner"></div>
+    <div id="run-timer" class="hud-corner"></div>
+    <div id="ticker" class="hud-corner"></div>
+    <div id="countdown" class="hud-corner"></div>
+    <div id="corner-btns" class="hud-corner"></div>
+    <div id="ov-tag" class="overlay"></div>
+    <div id="ov-death" class="overlay"></div>
+    <div id="ov-finish" class="overlay"></div>
+    <div id="ov-archive" class="overlay"></div>
+  </div>
+  <div id="toast" class="toast"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
